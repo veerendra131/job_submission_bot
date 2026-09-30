@@ -1,0 +1,111 @@
+# Copy to config.yaml and edit. config.yaml is git-ignored.
+
+search:
+  # Job titles / keyword queries. Each one is searched on every source.
+  queries:
+    - "Java Developer"
+    - "Java Full Stack Developer"
+  # Added to each query so boards return C2C-friendly postings first. Set to "" to disable.
+  c2c_query_suffix: "C2C"
+  locations:
+    - "United States"
+  remote_only: false
+  posted_within_days: 3
+  max_results_per_query: 40
+  # Which boards to search: dice, linkedin, indeed, corptocorp
+  sources: [dice, linkedin, indeed, corptocorp]
+
+filters:
+  # Postings that never mention C2C / corp-to-corp / third party are "unclear".
+  # false = skip them (strict C2C). true = keep them and let Claude judge.
+  include_unclear_c2c: false
+  # Skip a posting if any of these appear in the title or description (case-insensitive).
+  exclude_keywords:
+    - "security clearance"
+    - "active clearance"
+    - "public trust"
+    - "US citizens only"
+  # Skip if the title contains any of these.
+  exclude_title_keywords:
+    - "hotlist"
+    - "bench"
+    - "intern"
+  # Minimum Claude match score (0-100) to apply.
+  min_match_score: 65
+  # Treat same company + same title as a duplicate within this many days
+  # (catches reposts and the same job on multiple boards).
+  duplicate_window_days: 45
+
+claude:
+  model: claude-opus-5-5     # e.g. claude-sonnet-5-5 to lower cost
+  effort: medium             # low | medium | high
+
+apply:
+  # dry-run : search + tailor resumes only, no browser.
+  # review  : bot opens the job, fills the form, and stops before Submit. You click Submit.
+  # auto    : bot clicks Submit itself, but only on portals in auto_submit_portals.
+  mode: review
+  auto_submit_portals: [dice]
+  daily_limit: 30
+  per_portal_daily_limit:
+    dice: 30
+    linkedin: 10
+    indeed: 10
+    corptocorp: 20
+  # Random pause between applications (seconds).
+  delay_seconds: [25, 70]
+  # C2C boards where you apply by emailing the recruiter.
+  email:
+    enabled: true
+    # false = write a draft .eml into output/emails for you to send.
+    # true  = send via SMTP (settings in .env) when mode is auto.
+    send: false
+    # If a portal application can't be completed but the posting lists a recruiter email, email them instead.
+    fallback_for_portals: true
+
+browser:
+  channel: chrome            # chrome | msedge
+  # The bot's own Chrome profile (your logins live here, separate from your normal Chrome).
+  profile_dir: ~/.jobbot/browser_profile
+
+# Contact details and C2C details used to fill application forms.
+profile:
+  first_name: ""
+  last_name: ""
+  email: ""
+  phone: ""
+  city: ""
+  state: ""
+  zip: ""
+  linkedin_url: ""
+  # C2C / employer-of-record details
+  work_authorization: "H1B"          # e.g. US Citizen, GC, H1B, GC-EAD, H4-EAD
+  requires_sponsorship: "No"
+  employer_company: ""               # your corp / employer for C2C
+  employer_contact: ""               # name, email and phone of your employer contact
+  hourly_rate: "70"
+  years_experience: "10"
+  willing_to_relocate: "No"
+  notice_period: "Immediately"
+
+# Answers for application screening questions. The first pattern (regex, case-insensitive)
+# that matches the question label wins. {profile.x} is replaced with the value above.
+answers:
+  - { pattern: "first name", answer: "{profile.first_name}" }
+  - { pattern: "last name", answer: "{profile.last_name}" }
+  - { pattern: "e-?mail", answer: "{profile.email}" }
+  - { pattern: "phone|mobile", answer: "{profile.phone}" }
+  - { pattern: "linkedin", answer: "{profile.linkedin_url}" }
+  - { pattern: "^city|current city|city,? state", answer: "{profile.city}" }
+  - { pattern: "zip|postal", answer: "{profile.zip}" }
+  - { pattern: "sponsor", answer: "{profile.requires_sponsorship}" }
+  - { pattern: "authori[sz]ed to work|legally (authorized|eligible)", answer: "Yes" }
+  - { pattern: "visa|work authori[sz]ation|citizenship", answer: "{profile.work_authorization}" }
+  - { pattern: "(hourly )?rate|expected (pay|compensation|salary)", answer: "{profile.hourly_rate}" }
+  - { pattern: "years of (total |professional )?experience|how many years", answer: "{profile.years_experience}" }
+  - { pattern: "relocat", answer: "{profile.willing_to_relocate}" }
+  - { pattern: "notice|start date|available to start", answer: "{profile.notice_period}" }
+  - { pattern: "c2c|corp.?to.?corp|third.?party", answer: "Yes" }
+  - { pattern: "employer (name|company)|your company", answer: "{profile.employer_company}" }
+  - { pattern: "employer contact|reference", answer: "{profile.employer_contact}" }
+  - { pattern: "commute|onsite|on-site|hybrid", answer: "Yes" }
